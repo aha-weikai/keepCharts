@@ -40,7 +40,21 @@ class DragItem {
     // 获取元素的宽高
     this.getWidthAndHeight();
 
-    const fn = this.dealMoveEvent.bind(this);
+    this.dealWithDrag();
+  }
+
+  dealWithDrag() {
+    const dealMoveFn = this.dealMoveEvent.bind(this);
+
+    const moveOverFn = (e: MouseEvent) => {
+      // 可以在这儿增加 鼠标重新进入拖拽元素的位置
+      // 如当鼠标进入拖拽元素的内部，而不是边缘，才可以拖拽
+      // 方法一: 在拖拽元素的内部增加一个元素核心，当触发此元素的 mouseenter 事件时，触发拖拽元素的mousemove
+      // 方法二：通过鼠标事件取得鼠标距离拖拽元素的左上角的距离，判断鼠标是否在内部，然后再触发拖拽元素的mousemove
+      if (e.buttons === 1) {
+        this.child.addEventListener("mousemove", dealMoveFn);
+      }
+    };
 
     this.child?.addEventListener("mousedown", (e) => {
       // 获取鼠标的初始位置
@@ -49,27 +63,13 @@ class DragItem {
 
       // 处理鼠标移动
       // 在拖拽元素的身上
-      this.child.addEventListener("mousemove", fn);
+      this.child.addEventListener("mousemove", dealMoveFn);
+    });
 
-      const moveOverFn = (e: MouseEvent) => {
-        if (e.buttons === 1) {
-          this.child.addEventListener("mousemove", fn);
-        }
-      };
-
-      // 当鼠标抬起，取消拖动监听
-      document.addEventListener(
-        "mouseup",
-        () => {
-          this.child.removeEventListener("mousemove", fn);
-          this.child.removeEventListener("mouseenter", moveOverFn);
-        },
-        { once: true }
-      );
-
-      // 拖拽元素 监听鼠标进入
-      // 鼠标进入监听拖拽元素的鼠标移动事件
-      this.child.addEventListener("mouseenter", moveOverFn);
+    // 当鼠标抬起，取消拖动监听
+    document.addEventListener("mouseup", () => {
+      this.child.removeEventListener("mousemove", dealMoveFn);
+      this.child.removeEventListener("mouseenter", moveOverFn);
     });
 
     // 当鼠标离开父容器范围
@@ -77,7 +77,11 @@ class DragItem {
     // 如果鼠标没有按下，取消拖拽
     this.parent.addEventListener("mouseout", () => {
       // 取消拖拽事件的监听
-      this.parent.removeEventListener("mousemove", fn);
+      this.child.removeEventListener("mousemove", dealMoveFn);
+
+      // 拖拽元素 监听鼠标进入
+      // 鼠标进入监听拖拽元素的鼠标移动事件
+      this.child.addEventListener("mouseenter", moveOverFn);
     });
   }
 
